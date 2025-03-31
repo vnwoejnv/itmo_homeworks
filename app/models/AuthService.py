@@ -1,4 +1,4 @@
-import User
+import User 
 #мне кажется что этот класс не очень нужен конкретно в этом задании
 class AuthService:
     @staticmethod
