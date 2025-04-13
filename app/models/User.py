@@ -1,60 +1,44 @@
-from typing import Dict, List, Tuple, Optional, Any
+from decimal import Decimal
+from datetime import datetime
+from sqlmodel import SQLModel, Field, Relationship
+from typing import List, Optional, TYPE_CHECKING
+from sqlalchemy import Column, ForeignKey, Integer
 
+if TYPE_CHECKING:
+    from models.requests import ModelRequest, TransactionRequest
 
-class User: #супер класс для пользователя и администратора
-    def __init__(self, username: str, email: str, password: str):
-        self.__username = username
-        self.__email = email 
-        self.__password_hash = self._hash_password(password)
-        self.__id = None  # Будет назначен при сохранении в БД
+class User(SQLModel):
+    username: str = Field(index=True)
+    email: str = Field(index=True)   
+    password_hash: str = Field() 
+ 
+
+class RegularUser(User, table=True):
+    __tablename__='regular_users'
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    #balance: Decimal = Field(default=Decimal('0.00'), sa_type="NUMERIC(15, 2)")
+    model_requests: List["ModelRequest"] = Relationship(
+        back_populates="regular_user",
+        sa_relationship_kwargs={"cascade": "all, delete-orphan"}
+        )
+    transaction_requests: List["TransactionRequest"] = Relationship(
+        back_populates="regular_user",
+        sa_relationship_kwargs={"cascade": "all, delete-orphan"}
+        )
     
-    def _hash_password(self, password: str) -> str:
-        pass
-
-    #геттеры и сеттеры...
-
-   
-
-class RegularUser(User):
-    def __init__(self, username: str, email: str, password: str):
-        super().__init__(username, email, password)
-        self.__balance = 0.0
-        self.__prediction_history = []
-        self.__transaction_history = []
-
-    def make_prediction_request(self, data: Dict[str, Any]):
-        #как-то обратиться к классу ModelRequest и сделать запрос
-        pass
-        
-    def balance_deposit_request(self, amount: float) -> bool:
-        #как-то обратиться к классу TransactionRequest и пополнить баланс
-        pass
-
-    def watch_requests_history(self):
-        #обратитьсяк классу RequestsHistorySearch и увидеть свои запросы к модели
-        pass
-
-    def watch_transactions_history(self):
-        # обратиться к классу TransactionsHistorysearch и увидеть свои пополнения
-        pass
-
-    
+    def __str__(self):
+        return f"RegularUser(id={self.id}, username={self.username}, email={self.email})"
+    def __repr__(self):
+        return f"RegularUser(id={self.id}, username={self.username}, email={self.email})"
+                            
 
 
-class adminUser(User):
-    def __init__(self, username: str, email: str, password: str):
-        super().__init__(username, email, password)
-        
-    def add_balance_to_user(self, user_id: int, amount:float) -> bool:
-        # через TransactionService (наверно)
-        pass
-
-    def watch_user_transactions_history(self, user_id) -> list: # все через класс TransactionsHistorySearch
-        pass
-    
-    def watch_pending_transactions(self) -> list:
-        pass
-
-
-    def view_all_transactions(self) -> list:
-        pass
+# class AdminUser(User, table=True):
+#     __tablename__ = 'admin_users'
+#     id: Optional[int] = Field(default=None, primary_key=True)
+#     #может быть нужны будут еще поля 
+#     #transaction_results: List["TransactionResult"] = Relationship(
+#     #     back_populates="admin",
+#     #     sa_relationship_kwargs={"cascade": "save-update"}
+#     #)
