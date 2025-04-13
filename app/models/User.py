@@ -1,62 +1,44 @@
 from decimal import Decimal
 from datetime import datetime
-from typing import Dict, List, Tuple, Optional, Any
 from sqlmodel import SQLModel, Field, Relationship
+from typing import List, Optional, TYPE_CHECKING
+from sqlalchemy import Column, ForeignKey, Integer
 
-class User(SQLModel, table=True):
+if TYPE_CHECKING:
+    from models.requests import ModelRequest, TransactionRequest
 
-    __tablename__ = "users"
-
-    id: Optional[int] = Field(default=None, primary_key = True)
-    username: Optional[str] = Field(index=True, nullable=False)
-    email: Optional[str] = Field(index=True, nullable=False)
-    password_hash: Optional[str] = Field(nullable=False)
-
-    type: str = Field(default="user")
-
-    __mapper_args__ = {
-        "polymorphic_identity": "user",
-        "polymorphic_on": "type"
-    }
-    
-
+class User(SQLModel):
+    username: str = Field(index=True)
+    email: str = Field(index=True)   
+    password_hash: str = Field() 
+ 
 
 class RegularUser(User, table=True):
-    __tablename__ = "regular_users"
+    __tablename__='regular_users'
 
-    id: Optional[int] = Field(
-        default=None, 
-        primary_key=True,
-        foreign_key="users.id"
-    )
-
-    balance: Decimal = Field(default=0, sa_type="NUMERIC(15, 2)")
-    last_transaction_id: Optional[int] = Field(foreign_key="transactions.id")
-
-    model_requests: List["ModelRequest"] = Relationship(back_populates="regular_user")
-    transactions: List["Transaction"] = Relationship(back_populates="regular_user")
-
+    id: Optional[int] = Field(default=None, primary_key=True)
+    #balance: Decimal = Field(default=Decimal('0.00'), sa_type="NUMERIC(15, 2)")
+    model_requests: List["ModelRequest"] = Relationship(
+        back_populates="regular_user",
+        sa_relationship_kwargs={"cascade": "all, delete-orphan"}
+        )
+    transaction_requests: List["TransactionRequest"] = Relationship(
+        back_populates="regular_user",
+        sa_relationship_kwargs={"cascade": "all, delete-orphan"}
+        )
     
-    __mapper_args__ = { 
-        "polymorphic_identity": "regular_user", 
-    }
+    def __str__(self):
+        return f"RegularUser(id={self.id}, username={self.username}, email={self.email})"
+    def __repr__(self):
+        return f"RegularUser(id={self.id}, username={self.username}, email={self.email})"
+                            
 
-class AdminUser(User, table=True): #наследуется от User
-    __tablename__ = "admin_users"
 
-    id: Optional[int] = Field(
-        default=None, 
-        primary_key=True,
-        foreign_key="users.id"
-    )
-    # можно добавить поля с правами администратора
-
-    transaction_results: List["TransactionResult"] = Relationship(
-    back_populates="admin"
-)
-
-    __mapper_args__ = {
-        "polymorphic_identity": "admin_user", 
-    }
-        
-    
+# class AdminUser(User, table=True):
+#     __tablename__ = 'admin_users'
+#     id: Optional[int] = Field(default=None, primary_key=True)
+#     #может быть нужны будут еще поля 
+#     #transaction_results: List["TransactionResult"] = Relationship(
+#     #     back_populates="admin",
+#     #     sa_relationship_kwargs={"cascade": "save-update"}
+#     #)

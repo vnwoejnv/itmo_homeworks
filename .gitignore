@@ -1,0 +1,6 @@
+app/routes/__init__.py
+app/routes/auth.py
+app/routes/home.py
+app/routes/ml.py
+app/routes/transaction.py
+app/routes/user.py

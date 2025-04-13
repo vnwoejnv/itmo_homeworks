@@ -1,7 +1,9 @@
 from sqlmodel import SQLModel, Session, create_engine 
 from contextlib import contextmanager
 from .config import get_settings
+from sqlalchemy import text
 
+# This module is responsible for database engine and session.
 def get_database_engine():
     """
     Create and configure the SQLAlchemy engine.
@@ -19,7 +21,8 @@ def get_database_engine():
         pool_pre_ping=True,
         pool_recycle=3600
     )
-    return engine
+    return engine 
+
 
 engine = get_database_engine()
 
@@ -40,8 +43,11 @@ def init_db(drop_all: bool = False) -> None:
     try:
         engine = get_database_engine()
         if drop_all:
-            SQLModel.metadata.drop_all(engine)
-        
+            with engine.connect() as conn:
+                conn.execute(text("DROP SCHEMA public CASCADE;"))
+                conn.execute(text("CREATE SCHEMA public;"))
+                conn.commit()
+
         SQLModel.metadata.create_all(engine)
     except Exception as e:
         raise

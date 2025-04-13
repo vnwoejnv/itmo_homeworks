@@ -10,15 +10,24 @@ services:
     volumes:
       - ./app:/app 
     depends_on:
-      - database
+      - db
+    networks:
+      - event-planner-network
   
-  # web-proxy:
-  #   image: nginx:stable
-  #   depends_on:
-  #     - app
-  #   ports:
-  #   - 80:80
-  #   - 443:443
+  web:
+    image: nginx:latest
+    container_name: event-planner-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      app:
+        condition: service_healthy
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      # - ./nginx/ssl:/etc/nginx/ssl
+    networks:
+      - event-planner-network
 
   # rabbitmq:
   #   image: rabbitmq:3-management
@@ -29,17 +38,26 @@ services:
   #     - rabbitmq_data:/var/lib/rabbitmq
   #   restart: always
 
-  database:
-    image: postgres:17
+  db:
+    image: postgres:16-alpine
+    container_name: event-planner-db
+    restart: unless-stopped
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data/
     environment:
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - POSTGRES_DB=${POSTGRES_DB}
+    networks:
+      - event-planner-network
     
 
   
 volumes:
   postgres_data:
   #rabbitmq_data:
+
+networks:
+  event-planner-network:
+    name: event-planner-network
+    driver: bridge
